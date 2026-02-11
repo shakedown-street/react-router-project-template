@@ -1,4 +1,4 @@
-import type { Session, SessionStorage } from 'react-router';
+import { redirect, type Session, type SessionStorage } from 'react-router';
 import type { IUserRepository } from '../repositories/IUserRepository';
 import type { IUser } from '../types/IUser';
 import type { ISessionManager } from './ISessionManager';
@@ -25,7 +25,7 @@ export class SessionManager implements ISessionManager {
 
   async getUser(request: Request): Promise<IUser | null> {
     const userId = await this.getUserId(request);
-    if (!userId) {
+    if (userId === null) {
       return null;
     }
     return await this.userRepository.findById(userId);
@@ -42,8 +42,8 @@ export class SessionManager implements ISessionManager {
 
   async requireUser(request: Request): Promise<IUser> {
     const user = await this.getUser(request);
-    if (!user) {
-      throw new Error('Unauthorized');
+    if (user === null) {
+      throw redirect('/auth/login');
     }
     return user;
   }
