@@ -35,7 +35,7 @@ export async function action({ request }: Route.ActionArgs) {
 
   try {
     const user = await authService.login(email, password);
-    return redirect('/', { headers: { 'Set-Cookie': await sessionManager.create(user.id) } });
+    return await sessionManager.create(user.id, '/');
   } catch (error) {
     if (error instanceof AuthenticationError) {
       return { error: 'Invalid email or password' };

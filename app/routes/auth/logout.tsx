@@ -10,9 +10,5 @@ export async function loader({}: Route.LoaderArgs) {
 export async function action({ request }: Route.ActionArgs) {
   const { sessionManager } = AuthServiceFactory.create(prisma);
 
-  return redirect('/auth/login', {
-    headers: {
-      'Set-Cookie': await sessionManager.destroy(request),
-    },
-  });
+  return await sessionManager.destroy(request, '/auth/login');
 }

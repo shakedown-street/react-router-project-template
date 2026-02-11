@@ -40,7 +40,7 @@ export async function action({ request }: Route.ActionArgs) {
     const { authService, sessionManager } = AuthServiceFactory.create(prisma);
 
     const user = await authService.signup(email, password);
-    return redirect('/', { headers: { 'Set-Cookie': await sessionManager.create(user.id) } });
+    return await sessionManager.create(user.id, '/');
   } catch (error) {
     if (error instanceof AuthenticationError) {
       return { error: error.message };

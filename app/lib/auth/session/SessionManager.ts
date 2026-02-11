@@ -12,15 +12,15 @@ export class SessionManager implements ISessionManager {
     private userRepository: IUserRepository,
   ) {}
 
-  async create(userId: string): Promise<string> {
+  async create(userId: string, redirectTo: string): Promise<Response> {
     const session = await this.storage.getSession();
     session.set(USER_ID_STORAGE_KEY, userId);
-    return await this.storage.commitSession(session);
+    return redirect(redirectTo, { headers: { 'Set-Cookie': await this.storage.commitSession(session) } });
   }
 
-  async destroy(request: Request): Promise<string> {
+  async destroy(request: Request, redirectTo: string): Promise<Response> {
     const session = await this.get(request);
-    return await this.storage.destroySession(session);
+    return redirect(redirectTo, { headers: { 'Set-Cookie': await this.storage.destroySession(session) } });
   }
 
   async getUser(request: Request): Promise<IUser | null> {
