@@ -1,5 +1,4 @@
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
-
 import type { Route } from './+types/root';
 import './app.css';
 
@@ -36,7 +35,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <div className="container mx-auto px-4">
+    <div className="container mx-auto p-4 pt-16">
       <Outlet />
     </div>
   );
