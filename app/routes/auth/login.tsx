@@ -3,8 +3,9 @@ import z from 'zod';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
-import { verifyLogin } from '~/lib/auth.server';
-import { commitSession, getSessionUser } from '~/lib/session.server';
+import { AuthenticationError } from '~/lib/auth/errors';
+import { AuthServiceFactory } from '~/lib/auth/factory';
+import { prisma } from '~/lib/prisma';
 import type { Route } from './+types/login';
 
 const loginSchema = z.object({
@@ -13,7 +14,8 @@ const loginSchema = z.object({
 });
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const user = await getSessionUser(request);
+  const { sessionManager } = AuthServiceFactory.create(prisma);
+  const user = await sessionManager.getUser(request);
   if (user !== null) {
     return redirect('/');
   }
@@ -28,16 +30,18 @@ export async function action({ request }: Route.ActionArgs) {
     return { error: result.error.issues[0].message };
   }
 
-  const user = await verifyLogin(result.data.email, result.data.password);
-  if (user === null) {
-    return { error: 'Invalid email or password' };
-  }
+  const { email, password } = result.data;
+  const { authService, sessionManager } = AuthServiceFactory.create(prisma);
 
-  return redirect('/', {
-    headers: {
-      'Set-Cookie': await commitSession(user.id),
-    },
-  });
+  try {
+    const user = await authService.login(email, password);
+    return redirect('/', { headers: { 'Set-Cookie': await sessionManager.create(user.id) } });
+  } catch (error) {
+    if (error instanceof AuthenticationError) {
+      return { error: 'Invalid email or password' };
+    }
+    throw error;
+  }
 }
 
 export default function Login({ actionData }: Route.ComponentProps) {

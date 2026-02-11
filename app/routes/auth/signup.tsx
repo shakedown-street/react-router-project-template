@@ -1,11 +1,12 @@
-import z from 'zod';
 import { Form, Link, redirect } from 'react-router';
-import { commitSession, getSessionUser } from '~/lib/session.server';
-import type { Route } from './+types/signup';
+import z from 'zod';
+import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
-import { checkEmailExists, createUser, validatePassword } from '~/lib/auth.server';
-import { Button } from '~/components/ui/button';
+import { AuthenticationError } from '~/lib/auth/errors';
+import { AuthServiceFactory } from '~/lib/auth/factory';
+import { prisma } from '~/lib/prisma';
+import type { Route } from './+types/signup';
 
 const signupSchema = z.object({
   email: z.email(),
@@ -14,7 +15,8 @@ const signupSchema = z.object({
 });
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const user = await getSessionUser(request);
+  const { sessionManager } = AuthServiceFactory.create(prisma);
+  const user = await sessionManager.getUser(request);
   if (user !== null) {
     return redirect('/');
   }
@@ -29,27 +31,22 @@ export async function action({ request }: Route.ActionArgs) {
     return { error: result.error.issues[0].message };
   }
 
-  const passwordResult = validatePassword(result.data.password);
-  if (!passwordResult.valid) {
-    return { error: passwordResult.error! };
-  }
+  const { email, password, confirmPassword } = result.data;
 
-  const passwordsMatch = result.data.password === result.data.confirmPassword;
-  if (!passwordsMatch) {
+  if (password !== confirmPassword) {
     return { error: 'Passwords do not match' };
   }
+  try {
+    const { authService, sessionManager } = AuthServiceFactory.create(prisma);
 
-  const emailExists = await checkEmailExists(result.data.email);
-  if (emailExists) {
-    return { error: 'Email already exists' };
+    const user = await authService.signup(email, password);
+    return redirect('/', { headers: { 'Set-Cookie': await sessionManager.create(user.id) } });
+  } catch (error) {
+    if (error instanceof AuthenticationError) {
+      return { error: error.message };
+    }
+    throw error;
   }
-
-  const user = await createUser(result.data.email, result.data.password);
-  return redirect('/', {
-    headers: {
-      'Set-Cookie': await commitSession(user.id),
-    },
-  });
 }
 
 export default function Signup({ actionData }: Route.ComponentProps) {

@@ -1,14 +1,16 @@
-import { Button } from '~/components/ui/button';
-import type { Route } from './+types/home';
-import { requireSessionUser } from '~/lib/session.server';
 import { useSubmit } from 'react-router';
+import { Button } from '~/components/ui/button';
+import { AuthServiceFactory } from '~/lib/auth/factory';
+import { prisma } from '~/lib/prisma';
+import type { Route } from './+types/home';
 
 export function meta({}: Route.MetaArgs) {
   return [{ title: 'React Router Project Template' }];
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const user = await requireSessionUser(request);
+  const { sessionManager } = AuthServiceFactory.create(prisma);
+  const user = await sessionManager.requireUser(request);
 
   return { user };
 }
