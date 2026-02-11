@@ -1,47 +1,36 @@
 import { Form, Link, redirect } from 'react-router';
-import z from 'zod';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
-import { AuthenticationError } from '~/lib/auth/errors';
 import { AuthServiceFactory } from '~/lib/auth/factory';
+import { LoginUseCase, type LoginInput } from '~/lib/auth/use-cases/LoginUseCase';
 import { prisma } from '~/lib/prisma';
 import type { Route } from './+types/login';
 
-const loginSchema = z.object({
-  email: z.email(),
-  password: z.string(),
-});
-
 export async function loader({ request }: Route.LoaderArgs) {
   const { sessionManager } = AuthServiceFactory.create(prisma);
+
   const user = await sessionManager.getUser(request);
   if (user !== null) {
     return redirect('/');
   }
+
   return null;
 }
 
 export async function action({ request }: Route.ActionArgs) {
-  const formData = await request.formData();
-
-  const result = loginSchema.safeParse(Object.fromEntries(formData));
-  if (!result.success) {
-    return { error: result.error.issues[0].message };
-  }
-
-  const { email, password } = result.data;
   const { authService, sessionManager } = AuthServiceFactory.create(prisma);
+  const useCase = new LoginUseCase(authService, sessionManager);
 
-  try {
-    const user = await authService.login(email, password);
-    return await sessionManager.create(user.id, '/');
-  } catch (error) {
-    if (error instanceof AuthenticationError) {
-      return { error: 'Invalid email or password' };
-    }
-    throw error;
+  const formData = await request.formData();
+  const input = Object.fromEntries(formData) as LoginInput;
+  const output = await useCase.execute(input);
+
+  if (!output.success) {
+    return { error: output.error };
   }
+
+  return output.redirectResponse;
 }
 
 export default function Login({ actionData }: Route.ComponentProps) {

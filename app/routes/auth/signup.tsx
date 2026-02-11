@@ -1,52 +1,36 @@
 import { Form, Link, redirect } from 'react-router';
-import z from 'zod';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
-import { AuthenticationError } from '~/lib/auth/errors';
 import { AuthServiceFactory } from '~/lib/auth/factory';
+import { SignupUseCase, type SignupInput } from '~/lib/auth/use-cases/SignupUseCase';
 import { prisma } from '~/lib/prisma';
 import type { Route } from './+types/signup';
 
-const signupSchema = z.object({
-  email: z.email(),
-  password: z.string(),
-  confirmPassword: z.string(),
-});
-
 export async function loader({ request }: Route.LoaderArgs) {
   const { sessionManager } = AuthServiceFactory.create(prisma);
+
   const user = await sessionManager.getUser(request);
   if (user !== null) {
     return redirect('/');
   }
+
   return null;
 }
 
 export async function action({ request }: Route.ActionArgs) {
+  const { authService, sessionManager } = AuthServiceFactory.create(prisma);
+  const useCase = new SignupUseCase(authService, sessionManager);
+
   const formData = await request.formData();
+  const input = Object.fromEntries(formData) as SignupInput;
+  const output = await useCase.execute(input);
 
-  const result = signupSchema.safeParse(Object.fromEntries(formData));
-  if (!result.success) {
-    return { error: result.error.issues[0].message };
+  if (!output.success) {
+    return { error: output.error };
   }
 
-  const { email, password, confirmPassword } = result.data;
-
-  if (password !== confirmPassword) {
-    return { error: 'Passwords do not match' };
-  }
-  try {
-    const { authService, sessionManager } = AuthServiceFactory.create(prisma);
-
-    const user = await authService.signup(email, password);
-    return await sessionManager.create(user.id, '/');
-  } catch (error) {
-    if (error instanceof AuthenticationError) {
-      return { error: error.message };
-    }
-    throw error;
-  }
+  return output.redirectResponse;
 }
 
 export default function Signup({ actionData }: Route.ComponentProps) {
