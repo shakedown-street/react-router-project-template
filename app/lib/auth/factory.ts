@@ -1,22 +1,22 @@
 import type { PrismaClient } from 'prisma/generated/client';
 import { storage } from './config';
+import { BcryptPasswordHasher } from './hashers/BcryptPasswordHasher';
 import { PrismaUserRepository } from './repositories/PrismaUserRepository';
-import { AuthenticationService } from './services/AuthenticationService';
-import { PasswordService } from './services/PasswordService';
-import { SessionManager } from './session/SessionManager';
-import { PasswordValidator } from './validators/PasswordValidator';
+import { BaseAuthenticationService } from './services/BaseAuthenticationService';
+import { ReactRouterSessionService } from './services/ReactRouterSessionService';
+import { ZodPasswordValidator } from './validators/ZodPasswordValidator';
 
 export class AuthServiceFactory {
   static create(prisma: PrismaClient): {
-    authService: AuthenticationService;
-    sessionManager: SessionManager;
+    authService: BaseAuthenticationService;
+    sessionManager: ReactRouterSessionService;
   } {
     const userRepository = new PrismaUserRepository(prisma);
-    const passwordService = new PasswordService();
-    const passwordValidator = new PasswordValidator();
+    const passwordHasher = new BcryptPasswordHasher();
+    const passwordValidator = new ZodPasswordValidator();
 
-    const authService = new AuthenticationService(userRepository, passwordService, passwordValidator);
-    const sessionManager = new SessionManager(storage, userRepository);
+    const authService = new BaseAuthenticationService(userRepository, passwordHasher, passwordValidator);
+    const sessionManager = new ReactRouterSessionService(storage, userRepository);
 
     return {
       authService,

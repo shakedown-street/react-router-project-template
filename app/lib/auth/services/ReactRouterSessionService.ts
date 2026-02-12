@@ -1,15 +1,15 @@
 import { redirect, type Session, type SessionStorage } from 'react-router';
-import type { IUserRepository } from '../repositories/IUserRepository';
-import type { IUser } from '../types/IUser';
-import type { ISessionManager } from './ISessionManager';
+import type { UserRepository } from '../repositories/UserRepository';
+import type { User } from '../types/User';
+import type { SessionService } from './SessionService';
 
 const USER_ID_STORAGE_KEY = 'userId';
 const COOKIE_HEADER = 'Cookie';
 
-export class SessionManager implements ISessionManager {
+export class ReactRouterSessionService implements SessionService {
   constructor(
     private storage: SessionStorage,
-    private userRepository: IUserRepository,
+    private userRepository: UserRepository,
   ) {}
 
   async create(userId: string, redirectTo: string): Promise<Response> {
@@ -23,7 +23,7 @@ export class SessionManager implements ISessionManager {
     return redirect(redirectTo, { headers: { 'Set-Cookie': await this.storage.destroySession(session) } });
   }
 
-  async getUser(request: Request): Promise<IUser | null> {
+  async getUser(request: Request): Promise<User | null> {
     const userId = await this.getUserId(request);
     if (userId === null) {
       return null;
@@ -40,7 +40,7 @@ export class SessionManager implements ISessionManager {
     return userId;
   }
 
-  async requireUser(request: Request): Promise<IUser> {
+  async requireUser(request: Request): Promise<User> {
     const user = await this.getUser(request);
     if (user === null) {
       throw redirect('/auth/login');

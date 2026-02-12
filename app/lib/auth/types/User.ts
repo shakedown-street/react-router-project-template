@@ -1,4 +1,4 @@
-export type IUser = {
+export type User = {
   id: string;
   createdAt: Date;
   updatedAt: Date;
@@ -6,6 +6,6 @@ export type IUser = {
   isSuperuser: boolean;
 };
 
-export type IUserWithPassword = IUser & {
+export type UserWithPassword = User & {
   password: string;
 };

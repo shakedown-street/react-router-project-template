@@ -1,9 +1,9 @@
-import type { IUser } from '../types/IUser';
+import type { User } from '../types/User';
 
-export interface ISessionManager {
+export interface SessionService {
   create(userId: string, redirectTo: string): Promise<Response>;
   destroy(request: Request, redirectTo: string): Promise<Response>;
-  getUser(request: Request): Promise<IUser | null>;
+  getUser(request: Request): Promise<User | null>;
   getUserId(request: Request): Promise<string | null>;
-  requireUser(request: Request): Promise<IUser>;
+  requireUser(request: Request): Promise<User>;
 }
