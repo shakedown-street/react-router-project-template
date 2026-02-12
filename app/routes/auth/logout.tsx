@@ -8,7 +8,7 @@ export async function loader({}: Route.LoaderArgs) {
 }
 
 export async function action({ request }: Route.ActionArgs) {
-  const { sessionManager } = AuthServiceFactory.create(prisma);
+  const { sessionService } = AuthServiceFactory.create(prisma);
 
-  return await sessionManager.destroy(request, '/auth/login');
+  return await sessionService.destroy(request, '/auth/login');
 }

@@ -8,9 +8,9 @@ import { prisma } from '~/lib/prisma';
 import type { Route } from './+types/signup';
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const { sessionManager } = AuthServiceFactory.create(prisma);
+  const { sessionService } = AuthServiceFactory.create(prisma);
 
-  const user = await sessionManager.getUser(request);
+  const user = await sessionService.getUser(request);
   if (user !== null) {
     return redirect('/');
   }
@@ -19,8 +19,8 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 export async function action({ request }: Route.ActionArgs) {
-  const { authService, sessionManager } = AuthServiceFactory.create(prisma);
-  const useCase = new SignupUseCase(authService, sessionManager);
+  const { authService, sessionService } = AuthServiceFactory.create(prisma);
+  const useCase = new SignupUseCase(authService, sessionService);
 
   const formData = await request.formData();
   const input = Object.fromEntries(formData) as SignupInput;

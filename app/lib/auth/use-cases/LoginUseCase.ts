@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { IncorrectPasswordError, UserNotFoundError } from '../errors';
-import type { AuthenticationService } from '../services/AuthenticationService';
+import type { AuthService } from '../services/AuthService';
 import type { SessionService } from '../services/SessionService';
 
 const loginSchema = z.object({
@@ -18,8 +18,8 @@ export interface LoginOutput {
 
 export class LoginUseCase {
   constructor(
-    private authService: AuthenticationService,
-    private sessionManager: SessionService,
+    private authService: AuthService,
+    private sessionService: SessionService,
   ) {}
 
   async execute(input: LoginInput): Promise<LoginOutput> {
@@ -31,7 +31,7 @@ export class LoginUseCase {
 
     try {
       const user = await this.authService.login(email, password);
-      const response = await this.sessionManager.create(user.id, '/');
+      const response = await this.sessionService.create(user.id, '/');
       return { success: true, redirectResponse: response };
     } catch (error) {
       if (error instanceof UserNotFoundError || error instanceof IncorrectPasswordError) {

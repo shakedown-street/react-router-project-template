@@ -3,9 +3,8 @@ import type { PasswordHasher } from '../hashers/PasswordHasher';
 import type { UserRepository } from '../repositories/UserRepository';
 import type { User } from '../types/User';
 import type { PasswordValidator } from '../validators/PasswordValidator';
-import type { AuthenticationService } from './AuthenticationService';
 
-export class BaseAuthenticationService implements AuthenticationService {
+export class AuthService {
   constructor(
     private userRepository: UserRepository,
     private passwordHasher: PasswordHasher,

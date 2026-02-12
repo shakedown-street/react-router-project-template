@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { EmailAlreadyExistsError, InvalidPasswordError } from '../errors';
-import type { AuthenticationService } from '../services/AuthenticationService';
+import type { AuthService } from '../services/AuthService';
 import type { SessionService } from '../services/SessionService';
 
 const signupSchema = z.object({
@@ -19,8 +19,8 @@ export interface SignupOutput {
 
 export class SignupUseCase {
   constructor(
-    private authService: AuthenticationService,
-    private sessionManager: SessionService,
+    private authService: AuthService,
+    private sessionService: SessionService,
   ) {}
 
   async execute(input: SignupInput): Promise<SignupOutput> {
@@ -36,7 +36,7 @@ export class SignupUseCase {
 
     try {
       const user = await this.authService.signup(email, password);
-      const response = await this.sessionManager.create(user.id, '/');
+      const response = await this.sessionService.create(user.id, '/');
       return { success: true, redirectResponse: response };
     } catch (error) {
       if (error instanceof EmailAlreadyExistsError || error instanceof InvalidPasswordError) {

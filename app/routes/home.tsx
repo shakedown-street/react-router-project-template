@@ -9,8 +9,8 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const { sessionManager } = AuthServiceFactory.create(prisma);
-  const user = await sessionManager.requireUser(request);
+  const { sessionService } = AuthServiceFactory.create(prisma);
+  const user = await sessionService.requireUser(request);
 
   return { user };
 }
