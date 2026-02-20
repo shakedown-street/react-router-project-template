@@ -3,10 +3,9 @@ import { z } from 'zod';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
-import { getAuthService, getSessionService } from '~/lib/auth/factory';
-import { prisma } from '~/lib/prisma';
-import type { Route } from './+types/login';
 import { IncorrectPasswordError, UserNotFoundError } from '~/lib/auth/errors';
+import { getAuthService, getSessionService } from '~/lib/auth/factory';
+import type { Route } from './+types/login';
 
 const loginSchema = z.object({
   email: z.email(),
@@ -16,7 +15,7 @@ const loginSchema = z.object({
 export type LoginInput = z.infer<typeof loginSchema>;
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const sessionService = getSessionService(prisma);
+  const sessionService = getSessionService();
 
   const user = await sessionService.getUser(request);
   if (user !== null) {
@@ -27,8 +26,8 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 export async function action({ request }: Route.ActionArgs) {
-  const authService = getAuthService(prisma);
-  const sessionService = getSessionService(prisma);
+  const authService = getAuthService();
+  const sessionService = getSessionService();
 
   const formData = await request.formData();
   const input = Object.fromEntries(formData) as LoginInput;

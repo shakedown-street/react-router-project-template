@@ -1,13 +1,11 @@
 import { Form, Link, redirect } from 'react-router';
+import { z } from 'zod';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
+import { EmailAlreadyExistsError, InvalidPasswordError } from '~/lib/auth/errors';
 import { getAuthService, getSessionService } from '~/lib/auth/factory';
-import { prisma } from '~/lib/prisma';
 import type { Route } from './+types/signup';
-import { z } from 'zod';
-import { EmailAlreadyExistsError } from '~/lib/auth/errors';
-import { InvalidPasswordError } from '~/lib/auth/errors';
 
 const signupSchema = z.object({
   email: z.email(),
@@ -18,7 +16,7 @@ const signupSchema = z.object({
 export type SignupInput = z.infer<typeof signupSchema>;
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const sessionService = getSessionService(prisma);
+  const sessionService = getSessionService();
 
   const user = await sessionService.getUser(request);
   if (user !== null) {
@@ -29,8 +27,8 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 export async function action({ request }: Route.ActionArgs) {
-  const authService = getAuthService(prisma);
-  const sessionService = getSessionService(prisma);
+  const authService = getAuthService();
+  const sessionService = getSessionService();
 
   const formData = await request.formData();
   const input = Object.fromEntries(formData) as SignupInput;
