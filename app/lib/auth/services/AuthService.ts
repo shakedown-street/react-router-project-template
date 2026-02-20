@@ -1,23 +1,25 @@
+import type { IUserDAO } from '../daos/IUserDAO';
 import { EmailAlreadyExistsError, IncorrectPasswordError, InvalidPasswordError, UserNotFoundError } from '../errors';
-import type { PasswordHasher } from '../hashers/PasswordHasher';
-import type { UserRepository } from '../repositories/UserRepository';
+import type { IPasswordHasher } from '../hashers/IPasswordHasher';
 import type { User } from '../types/User';
-import type { PasswordValidator } from '../validators/PasswordValidator';
+import type { IPasswordValidator } from '../validators/IPasswordValidator';
+import type { IAuthService } from './IAuthService';
 
-export class AuthService {
+export class AuthService implements IAuthService {
   constructor(
-    private userRepository: UserRepository,
-    private passwordHasher: PasswordHasher,
-    private passwordValidator: PasswordValidator,
+    private userDao: IUserDAO,
+    private passwordHasher: IPasswordHasher,
+    private passwordValidator: IPasswordValidator,
   ) {}
 
   async login(email: string, password: string): Promise<User> {
-    const user = await this.userRepository.findByEmailWithPassword(email);
+    const user = await this.userDao.findByEmail(email);
     if (user === null) {
       throw new UserNotFoundError();
     }
 
-    const isValid = await this.passwordHasher.verify(password, user.password);
+    const passwordHash = await this.userDao.getPasswordHash(email);
+    const isValid = await this.passwordHasher.verify(password, passwordHash);
     if (!isValid) {
       throw new IncorrectPasswordError();
     }
@@ -38,12 +40,12 @@ export class AuthService {
       throw new EmailAlreadyExistsError(email);
     }
 
-    const user = await this.userRepository.create(email, hashedPassword);
+    const user = await this.userDao.create(email, hashedPassword);
     return user;
   }
 
   async checkEmailExists(email: string): Promise<boolean> {
-    const user = await this.userRepository.findByEmail(email);
+    const user = await this.userDao.findByEmail(email);
     return user !== null;
   }
 }

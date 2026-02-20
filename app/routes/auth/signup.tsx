@@ -2,13 +2,23 @@ import { Form, Link, redirect } from 'react-router';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
-import { AuthServiceFactory } from '~/lib/auth/factory';
-import { SignupUseCase, type SignupInput } from '~/lib/auth/use-cases/SignupUseCase';
+import { getAuthService, getSessionService } from '~/lib/auth/factory';
 import { prisma } from '~/lib/prisma';
 import type { Route } from './+types/signup';
+import { z } from 'zod';
+import { EmailAlreadyExistsError } from '~/lib/auth/errors';
+import { InvalidPasswordError } from '~/lib/auth/errors';
+
+const signupSchema = z.object({
+  email: z.email(),
+  password: z.string(),
+  confirmPassword: z.string(),
+});
+
+export type SignupInput = z.infer<typeof signupSchema>;
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const { sessionService } = AuthServiceFactory.create(prisma);
+  const sessionService = getSessionService(prisma);
 
   const user = await sessionService.getUser(request);
   if (user !== null) {
@@ -19,18 +29,31 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 export async function action({ request }: Route.ActionArgs) {
-  const { authService, sessionService } = AuthServiceFactory.create(prisma);
-  const useCase = new SignupUseCase(authService, sessionService);
+  const authService = getAuthService(prisma);
+  const sessionService = getSessionService(prisma);
 
   const formData = await request.formData();
   const input = Object.fromEntries(formData) as SignupInput;
-  const output = await useCase.execute(input);
+  const parseResult = signupSchema.safeParse(input);
+  if (!parseResult.success) {
+    return { error: parseResult.error.issues[0].message };
+  }
+  const { email, password, confirmPassword } = parseResult.data;
 
-  if (!output.success) {
-    return { error: output.error };
+  if (password !== confirmPassword) {
+    return { error: 'Passwords do not match' };
   }
 
-  return output.redirectResponse;
+  try {
+    const user = await authService.signup(email, password);
+    const response = await sessionService.create(user.id, '/');
+    return response;
+  } catch (error) {
+    if (error instanceof EmailAlreadyExistsError || error instanceof InvalidPasswordError) {
+      return { error: error.message };
+    }
+    throw error;
+  }
 }
 
 export default function Signup({ actionData }: Route.ComponentProps) {

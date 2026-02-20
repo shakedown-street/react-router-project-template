@@ -1,5 +1,5 @@
 import z from 'zod';
-import type { PasswordValidationResult, PasswordValidator } from './PasswordValidator';
+import type { IPasswordValidator, PasswordValidationResult } from './IPasswordValidator';
 
 export const passwordSchema = z
   .string()
@@ -9,7 +9,7 @@ export const passwordSchema = z
   .regex(/[0-9]/, 'Password must contain at least one number')
   .regex(/[^a-zA-Z0-9]/, 'Password must contain at least one special character');
 
-export class ZodPasswordValidator implements PasswordValidator {
+export class ZodPasswordValidator implements IPasswordValidator {
   validate(password: string): PasswordValidationResult {
     const result = passwordSchema.safeParse(password);
     if (!result.success) {

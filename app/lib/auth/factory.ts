@@ -1,26 +1,20 @@
 import type { PrismaClient } from 'prisma/generated/client';
-import { storage } from './config';
+import { PrismaUserDAO } from './daos/PrismaUserDAO';
 import { BcryptPasswordHasher } from './hashers/BcryptPasswordHasher';
-import { PrismaUserRepository } from './repositories/PrismaUserRepository';
 import { AuthService } from './services/AuthService';
 import { SessionService } from './services/SessionService';
 import { ZodPasswordValidator } from './validators/ZodPasswordValidator';
 
-export class AuthServiceFactory {
-  static create(prisma: PrismaClient): {
-    authService: AuthService;
-    sessionService: SessionService;
-  } {
-    const userRepository = new PrismaUserRepository(prisma);
-    const passwordHasher = new BcryptPasswordHasher();
-    const passwordValidator = new ZodPasswordValidator();
+export function getAuthService(prisma: PrismaClient) {
+  const userDao = new PrismaUserDAO(prisma);
+  const passwordHasher = new BcryptPasswordHasher();
+  const passwordValidator = new ZodPasswordValidator();
 
-    const authService = new AuthService(userRepository, passwordHasher, passwordValidator);
-    const sessionService = new SessionService(storage, userRepository);
+  return new AuthService(userDao, passwordHasher, passwordValidator);
+}
 
-    return {
-      authService,
-      sessionService,
-    };
-  }
+export function getSessionService(prisma: PrismaClient) {
+  const userDao = new PrismaUserDAO(prisma);
+
+  return new SessionService(userDao);
 }

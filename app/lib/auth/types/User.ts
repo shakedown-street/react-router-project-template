@@ -5,7 +5,3 @@ export type User = {
   email: string;
   isSuperuser: boolean;
 };
-
-export type UserWithPassword = User & {
-  password: string;
-};

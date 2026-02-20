@@ -1,10 +1,10 @@
-import type { User, UserWithPassword } from '../types/User';
+import type { User } from '../types/User';
 
-export interface UserRepository {
+export interface IUserDAO {
   findById(id: string): Promise<User | null>;
   findByEmail(email: string): Promise<User | null>;
-  findByEmailWithPassword(email: string): Promise<UserWithPassword | null>;
   create(email: string, passwordHash: string): Promise<User>;
   update(id: string, data: Partial<User>): Promise<User>;
   delete(id: string): Promise<void>;
+  getPasswordHash(email: string): Promise<string>;
 }

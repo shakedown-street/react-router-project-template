@@ -3,6 +3,6 @@ export type PasswordValidationResult = {
   error?: string;
 };
 
-export interface PasswordValidator {
+export interface IPasswordValidator {
   validate(password: string): PasswordValidationResult;
 }

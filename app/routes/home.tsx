@@ -1,6 +1,6 @@
 import { useSubmit } from 'react-router';
 import { Button } from '~/components/ui/button';
-import { AuthServiceFactory } from '~/lib/auth/factory';
+import { getSessionService } from '~/lib/auth/factory';
 import { prisma } from '~/lib/prisma';
 import type { Route } from './+types/home';
 
@@ -9,7 +9,7 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const { sessionService } = AuthServiceFactory.create(prisma);
+  const sessionService = getSessionService(prisma);
   const user = await sessionService.requireUser(request);
 
   return { user };
